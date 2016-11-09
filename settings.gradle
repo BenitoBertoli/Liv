@@ -1,0 +1,2 @@
+include ':liv', ':sample:app'
+rootProject.name = 'liv-parent'
