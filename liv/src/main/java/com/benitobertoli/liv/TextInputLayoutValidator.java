@@ -205,7 +205,7 @@ public class TextInputLayoutValidator {
                 }, new Action1<Throwable>() {
                     @Override
                     public void call(Throwable throwable) {
-
+                        throwable.printStackTrace();
                     }
                 });
     }

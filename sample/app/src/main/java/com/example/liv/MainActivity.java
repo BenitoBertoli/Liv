@@ -72,9 +72,6 @@ public class MainActivity extends AppCompatActivity implements Liv.Callback {
                 Snackbar.make(requiredDuring, "Submit", Snackbar.LENGTH_SHORT).show();
                 break;
         }
-
-
-        liv.validate();
     }
 
     @Override
