@@ -1,14 +1,14 @@
-package com.benitobertoli.liv.validator;
+package com.benitobertoli.liv.rule;
 
-public abstract class BaseValidator implements Validator {
+public abstract class BaseRule implements Rule {
 
     private String errorMessage;
 
-    public BaseValidator() {
+    public BaseRule() {
         this("Invalid");
     }
 
-    public BaseValidator(String errorMessage) {
+    public BaseRule(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 

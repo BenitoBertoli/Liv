@@ -1,9 +1,33 @@
 apply plugin: 'com.android.library'
 
 def versionMajor = 0
-def versionMinor = 1
+def versionMinor = 2
 def versionPatch = 0
 def versionBuild = 0
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'liv'
+
+    publishedGroupId = 'com.benitobertoli'
+    libraryName = 'Liv'
+    artifact = 'liv'
+
+    libraryDescription = 'Live Input Validation for Android'
+
+    siteUrl = 'https://github.com/BenitoBertoli/Liv'
+    gitUrl = 'https://github.com/BenitoBertoli/Liv.git'
+
+    libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}"
+
+    developerId = 'benitobertoli'
+    developerName = 'Benito Bertoli'
+    developerEmail = 'benitogbertoli@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
 
 android {
     compileSdkVersion 25
@@ -29,4 +53,8 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'io.reactivex:rxjava:1.2.1'
     compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
+    compile 'com.jakewharton.rxrelay:rxrelay:1.2.0'
 }
+
+apply from: 'install.gradle'
+apply from: 'bintray.gradle'
