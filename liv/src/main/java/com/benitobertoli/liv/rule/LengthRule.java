@@ -13,7 +13,7 @@ public class LengthRule extends BaseRule {
         super("Minimum length: " + min + ", Maximum length: " + max);
         minLength = min;
         maxLength = max;
-        if (minLength > maxLength) {
+        if (minLength > maxLength && maxLength > 0) {
             minLength = max;
             maxLength = min;
         }
@@ -24,7 +24,7 @@ public class LengthRule extends BaseRule {
         super(errorMessage);
         minLength = min;
         maxLength = max;
-        if (minLength > maxLength) {
+        if (minLength > maxLength && maxLength > 0) {
             minLength = max;
             maxLength = min;
         }
