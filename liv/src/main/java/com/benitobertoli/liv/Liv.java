@@ -16,7 +16,9 @@ import rx.functions.FuncN;
 public class Liv {
     private List<TextInputLayoutValidator> inputLayoutValidators;
     private ValidatorState state = ValidatorState.NOT_VALIDATED;
+    private boolean submitWhenValid = false;
     private Callback callback;
+    private Action submitAction;
 
     private Liv() {
         // prevent instantiation outside of the object
@@ -25,6 +27,7 @@ public class Liv {
     private Liv(Builder builder) {
         inputLayoutValidators = builder.inputLayoutValidators;
         callback = builder.callback;
+        submitAction = builder.submitAction;
     }
 
     public void start() {
@@ -68,6 +71,17 @@ public class Liv {
                         if (callback != null) {
                             callback.onStateChange(validatorState);
                         }
+
+                        if (submitAction != null) {
+                            if (submitWhenValid) {
+                                if (state == ValidatorState.VALID) {
+                                    submitWhenValid = false;
+                                    submitAction.performAction();
+                                } else if (state == ValidatorState.INVALID) {
+                                    submitWhenValid = false;
+                                }
+                            }
+                        }
                     }
                 }, new Action1<Throwable>() {
                     @Override
@@ -85,6 +99,26 @@ public class Liv {
         }
     }
 
+    /**
+     * Perform submit action as soon as the form is {@link ValidatorState#VALID}.
+     */
+    public void submitWhenValid() {
+        switch (getState()) {
+            case NOT_VALIDATED:
+                submitWhenValid = true;
+                validate();
+                break;
+            case VALIDATING:
+                submitWhenValid = true;
+                break;
+            case VALID:
+                if (submitAction != null) {
+                    submitAction.performAction();
+                }
+                break;
+        }
+    }
+
     public void onDestroy() {
         for (TextInputLayoutValidator validator : inputLayoutValidators) {
             validator.onDestroy();
@@ -99,10 +133,15 @@ public class Liv {
         void onStateChange(ValidatorState state);
     }
 
+    public interface Action {
+        void performAction();
+    }
+
 
     public static final class Builder {
         private List<TextInputLayoutValidator> inputLayoutValidators;
         private Callback callback;
+        private Action submitAction;
 
         public Builder() {
             inputLayoutValidators = new ArrayList<>();
@@ -130,6 +169,11 @@ public class Liv {
 
         public Builder callback(Callback val) {
             callback = val;
+            return this;
+        }
+
+        public Builder submitAction(Action val) {
+            submitAction = val;
             return this;
         }
 
