@@ -3,6 +3,11 @@ package com.benitobertoli.liv;
 import android.support.design.widget.TextInputLayout;
 
 import com.benitobertoli.liv.rule.Rule;
+import com.benitobertoli.liv.validator.MessageType;
+import com.benitobertoli.liv.validator.TextInputLayoutValidator;
+import com.benitobertoli.liv.validator.ValidationTime;
+import com.benitobertoli.liv.validator.Validator;
+import com.benitobertoli.liv.validator.ValidatorState;
 import com.jakewharton.rxrelay.PublishRelay;
 
 import java.util.ArrayList;
@@ -14,7 +19,7 @@ import rx.functions.Action1;
 import rx.functions.FuncN;
 
 public class Liv {
-    private List<TextInputLayoutValidator> inputLayoutValidators;
+    private List<Validator> inputLayoutValidators;
     private ValidatorState state = ValidatorState.NOT_VALIDATED;
     private boolean submitWhenValid = false;
     private Callback callback;
@@ -32,7 +37,7 @@ public class Liv {
 
     public void start() {
         ArrayList<PublishRelay<ValidatorState>> relays = new ArrayList<>(inputLayoutValidators.size());
-        for (TextInputLayoutValidator validator : inputLayoutValidators) {
+        for (Validator validator : inputLayoutValidators) {
             relays.add(validator.getStateRelay());
         }
 
@@ -92,7 +97,7 @@ public class Liv {
     }
 
     public void validate() {
-        for (TextInputLayoutValidator validator : inputLayoutValidators) {
+        for (Validator validator : inputLayoutValidators) {
             if (validator.getState() == ValidatorState.NOT_VALIDATED) {
                 validator.validate();
             }
@@ -120,7 +125,7 @@ public class Liv {
     }
 
     public void onDestroy() {
-        for (TextInputLayoutValidator validator : inputLayoutValidators) {
+        for (Validator validator : inputLayoutValidators) {
             validator.onDestroy();
         }
     }
@@ -139,7 +144,7 @@ public class Liv {
 
 
     public static final class Builder {
-        private List<TextInputLayoutValidator> inputLayoutValidators;
+        private List<Validator> inputLayoutValidators;
         private Callback callback;
         private Action submitAction;
 
@@ -147,23 +152,28 @@ public class Liv {
             inputLayoutValidators = new ArrayList<>();
         }
 
+        public Builder add(Validator validator) {
+            inputLayoutValidators.add(validator);
+            return this;
+        }
+
         public Builder add(TextInputLayout input, ValidationTime time, MessageType messageType, Rule... rules) {
-            inputLayoutValidators.add(new TextInputLayoutValidator(input, time, messageType, Arrays.asList(rules)));
+            add(new TextInputLayoutValidator(input, time, messageType, Arrays.asList(rules)));
             return this;
         }
 
         public Builder add(TextInputLayout input, ValidationTime time, Rule... rules) {
-            inputLayoutValidators.add(new TextInputLayoutValidator(input, time, Arrays.asList(rules)));
+            add(new TextInputLayoutValidator(input, time, Arrays.asList(rules)));
             return this;
         }
 
         public Builder add(TextInputLayout input, MessageType messageType, Rule... rules) {
-            inputLayoutValidators.add(new TextInputLayoutValidator(input, messageType, Arrays.asList(rules)));
+            add(new TextInputLayoutValidator(input, messageType, Arrays.asList(rules)));
             return this;
         }
 
         public Builder add(TextInputLayout input, Rule... rules) {
-            inputLayoutValidators.add(new TextInputLayoutValidator(input, Arrays.asList(rules)));
+            add(new TextInputLayoutValidator(input, Arrays.asList(rules)));
             return this;
         }
 

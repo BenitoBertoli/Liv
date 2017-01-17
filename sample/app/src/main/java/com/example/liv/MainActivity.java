@@ -7,8 +7,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.benitobertoli.liv.Liv;
-import com.benitobertoli.liv.MessageType;
-import com.benitobertoli.liv.ValidatorState;
+import com.benitobertoli.liv.validator.MessageType;
+import com.benitobertoli.liv.validator.ValidatorState;
 import com.benitobertoli.liv.rule.EmailRule;
 import com.benitobertoli.liv.rule.LengthRule;
 import com.benitobertoli.liv.rule.NotEmptyRule;
@@ -17,7 +17,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.benitobertoli.liv.ValidationTime.LIVE;
+import static com.benitobertoli.liv.validator.ValidationTime.LIVE;
 
 public class MainActivity extends AppCompatActivity implements Liv.Callback, Liv.Action {
 

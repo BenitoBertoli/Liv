@@ -1,4 +1,4 @@
-package com.benitobertoli.liv;
+package com.benitobertoli.liv.validator;
 
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.util.Pair;
@@ -8,7 +8,6 @@ import android.widget.EditText;
 import com.benitobertoli.liv.rule.Rule;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
-import com.jakewharton.rxrelay.PublishRelay;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -21,17 +20,17 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 
-import static com.benitobertoli.liv.MessageType.SINGLE;
-import static com.benitobertoli.liv.ValidationTime.AFTER;
-import static com.benitobertoli.liv.ValidationTime.LIVE;
-import static com.benitobertoli.liv.ValidatorState.INVALID;
-import static com.benitobertoli.liv.ValidatorState.NOT_VALIDATED;
-import static com.benitobertoli.liv.ValidatorState.VALID;
-import static com.benitobertoli.liv.ValidatorState.VALIDATING;
+import static com.benitobertoli.liv.validator.MessageType.SINGLE;
+import static com.benitobertoli.liv.validator.ValidationTime.AFTER;
+import static com.benitobertoli.liv.validator.ValidationTime.LIVE;
+import static com.benitobertoli.liv.validator.ValidatorState.INVALID;
+import static com.benitobertoli.liv.validator.ValidatorState.NOT_VALIDATED;
+import static com.benitobertoli.liv.validator.ValidatorState.VALID;
+import static com.benitobertoli.liv.validator.ValidatorState.VALIDATING;
 import static rx.android.schedulers.AndroidSchedulers.mainThread;
 import static rx.schedulers.Schedulers.newThread;
 
-public class TextInputLayoutValidator {
+public class TextInputLayoutValidator extends Validator {
     public static final int DEBOUNCE_TIMEOUT_MILLIS = 500;
 
     private WeakReference<TextInputLayout> input;
@@ -40,9 +39,6 @@ public class TextInputLayoutValidator {
     private Subscription validateSubscription;
     private boolean gainedFocus = false;
 
-    // base
-    private ValidatorState state = NOT_VALIDATED;
-    private PublishRelay<ValidatorState> stateRelay;
     private ValidationTime time;
     private List<Rule> rules;
 
@@ -50,6 +46,7 @@ public class TextInputLayoutValidator {
     private ArrayList<String> errorMessages = new ArrayList<>();
 
     public TextInputLayoutValidator(TextInputLayout input, ValidationTime time, MessageType messageType, List<Rule> rules) {
+        super();
         this.input = new WeakReference<>(input);
         this.time = time;
         this.rules = rules;
@@ -74,8 +71,6 @@ public class TextInputLayoutValidator {
         if (textInputLayout == null || textInputLayout.getEditText() == null) {
             return;
         }
-
-        stateRelay = PublishRelay.create();
 
         final EditText editText = textInputLayout.getEditText();
 
@@ -136,6 +131,7 @@ public class TextInputLayoutValidator {
         }
     }
 
+    @Override
     public void validate() {
         final TextInputLayout textInputLayout = input.get();
         if (textInputLayout == null || textInputLayout.getEditText() == null) {
@@ -228,6 +224,7 @@ public class TextInputLayoutValidator {
         }
     }
 
+    @Override
     public void onDestroy() {
         if (textChangeSubscription != null && !textChangeSubscription.isUnsubscribed()) {
             textChangeSubscription.unsubscribe();
@@ -240,18 +237,5 @@ public class TextInputLayoutValidator {
         if (validateSubscription != null && !validateSubscription.isUnsubscribed()) {
             validateSubscription.unsubscribe();
         }
-    }
-
-    public PublishRelay<ValidatorState> getStateRelay() {
-        return stateRelay;
-    }
-
-    public ValidatorState getState() {
-        return state;
-    }
-
-    private void setState(ValidatorState state) {
-        this.state = state;
-        stateRelay.call(state);
     }
 }
