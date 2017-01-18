@@ -110,6 +110,7 @@ public class Liv {
     public void submitWhenValid() {
         switch (getState()) {
             case NOT_VALIDATED:
+            case INVALID:
                 submitWhenValid = true;
                 validate();
                 break;
