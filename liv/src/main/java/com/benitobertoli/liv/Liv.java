@@ -19,7 +19,7 @@ import rx.functions.Action1;
 import rx.functions.FuncN;
 
 public class Liv {
-    private List<Validator> inputLayoutValidators;
+    private List<Validator> validators;
     private ValidatorState state = ValidatorState.NOT_VALIDATED;
     private boolean submitWhenValid = false;
     private Callback callback;
@@ -30,14 +30,14 @@ public class Liv {
     }
 
     private Liv(Builder builder) {
-        inputLayoutValidators = builder.inputLayoutValidators;
+        validators = builder.validators;
         callback = builder.callback;
         submitAction = builder.submitAction;
     }
 
     public void start() {
-        ArrayList<PublishRelay<ValidatorState>> relays = new ArrayList<>(inputLayoutValidators.size());
-        for (Validator validator : inputLayoutValidators) {
+        ArrayList<PublishRelay<ValidatorState>> relays = new ArrayList<>(validators.size());
+        for (Validator validator : validators) {
             relays.add(validator.getStateRelay());
         }
 
@@ -97,8 +97,9 @@ public class Liv {
     }
 
     public void validate() {
-        for (Validator validator : inputLayoutValidators) {
-            if (validator.getState() == ValidatorState.NOT_VALIDATED) {
+        for (Validator validator : validators) {
+            if (validator.getState() == ValidatorState.NOT_VALIDATED
+                    || validator.getState() == ValidatorState.INVALID) {
                 validator.validate();
             }
         }
@@ -126,7 +127,7 @@ public class Liv {
     }
 
     public void onDestroy() {
-        for (Validator validator : inputLayoutValidators) {
+        for (Validator validator : validators) {
             validator.onDestroy();
         }
     }
@@ -145,16 +146,16 @@ public class Liv {
 
 
     public static final class Builder {
-        private List<Validator> inputLayoutValidators;
+        private List<Validator> validators;
         private Callback callback;
         private Action submitAction;
 
         public Builder() {
-            inputLayoutValidators = new ArrayList<>();
+            validators = new ArrayList<>();
         }
 
         public Builder add(Validator validator) {
-            inputLayoutValidators.add(validator);
+            validators.add(validator);
             return this;
         }
 
