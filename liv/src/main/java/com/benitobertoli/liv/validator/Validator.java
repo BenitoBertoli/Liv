@@ -1,6 +1,6 @@
 package com.benitobertoli.liv.validator;
 
-import com.jakewharton.rxrelay.PublishRelay;
+import com.jakewharton.rxrelay2.PublishRelay;
 
 import static com.benitobertoli.liv.validator.ValidatorState.NOT_VALIDATED;
 
@@ -15,7 +15,7 @@ public abstract class Validator {
 
     public abstract void validate();
 
-    public abstract void onDestroy();
+    public abstract void dispose();
 
     public PublishRelay<ValidatorState> getStateRelay() {
         return stateRelay;
@@ -27,7 +27,7 @@ public abstract class Validator {
 
     protected void setState(ValidatorState state) {
         this.state = state;
-        stateRelay.call(state);
+        stateRelay.accept(state);
     }
 
 }

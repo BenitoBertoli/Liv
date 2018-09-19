@@ -8,15 +8,15 @@ import com.benitobertoli.liv.validator.TextInputLayoutValidator;
 import com.benitobertoli.liv.validator.ValidationTime;
 import com.benitobertoli.liv.validator.Validator;
 import com.benitobertoli.liv.validator.ValidatorState;
-import com.jakewharton.rxrelay.PublishRelay;
+import com.jakewharton.rxrelay2.PublishRelay;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import rx.Observable;
-import rx.functions.Action1;
-import rx.functions.FuncN;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+
 
 public class Liv {
     private List<Validator> validators;
@@ -24,6 +24,7 @@ public class Liv {
     private boolean submitWhenValid = false;
     private Callback callback;
     private Action submitAction;
+    private Disposable livDisposable;
 
     private Liv() {
         // prevent instantiation outside of the object
@@ -41,59 +42,48 @@ public class Liv {
             relays.add(validator.getStateRelay());
         }
 
-        Observable.combineLatest(relays,
-                new FuncN<ValidatorState>() {
-                    @Override
-                    public ValidatorState call(Object... states) {
-                        boolean hasNotValidated = false;
-                        boolean hasInvalid = false;
+        livDisposable = Observable.combineLatest(relays,
+                states -> {
+                    boolean hasNotValidated = false;
+                    boolean hasInvalid = false;
 
-                        for (Object obj : states) {
-                            ValidatorState state = (ValidatorState) obj;
-                            if (state == ValidatorState.NOT_VALIDATED) {
-                                hasNotValidated = true;
-                            } else if (state == ValidatorState.VALIDATING) {
-                                // one of the validator is currently validating
-                                return ValidatorState.VALIDATING;
-                            } else if (state == ValidatorState.INVALID) {
-                                hasInvalid = true;
-                            }
+                    for (Object obj : states) {
+                        ValidatorState state = (ValidatorState) obj;
+                        if (state == ValidatorState.NOT_VALIDATED) {
+                            hasNotValidated = true;
+                        } else if (state == ValidatorState.VALIDATING) {
+                            // one of the validator is currently validating
+                            return ValidatorState.VALIDATING;
+                        } else if (state == ValidatorState.INVALID) {
+                            hasInvalid = true;
                         }
-
-                        if (hasNotValidated) {
-                            return ValidatorState.NOT_VALIDATED;
-                        } else if (hasInvalid) {
-                            return ValidatorState.INVALID;
-                        }
-
-                        return ValidatorState.VALID;
                     }
+
+                    if (hasNotValidated) {
+                        return ValidatorState.NOT_VALIDATED;
+                    } else if (hasInvalid) {
+                        return ValidatorState.INVALID;
+                    }
+
+                    return ValidatorState.VALID;
                 })
-                .subscribe(new Action1<ValidatorState>() {
-                    @Override
-                    public void call(ValidatorState validatorState) {
-                        state = validatorState;
-                        if (callback != null) {
-                            callback.onStateChange(validatorState);
-                        }
+                .subscribe(validatorState -> {
+                    state = validatorState;
+                    if (callback != null) {
+                        callback.onStateChange(validatorState);
+                    }
 
-                        if (submitAction != null) {
-                            if (submitWhenValid) {
-                                if (state == ValidatorState.VALID) {
-                                    submitWhenValid = false;
-                                    submitAction.performAction();
-                                } else if (state == ValidatorState.INVALID) {
-                                    submitWhenValid = false;
-                                }
+                    if (submitAction != null) {
+                        if (submitWhenValid) {
+                            if (state == ValidatorState.VALID) {
+                                submitWhenValid = false;
+                                submitAction.performAction();
+                            } else if (state == ValidatorState.INVALID) {
+                                submitWhenValid = false;
                             }
                         }
                     }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+                }, Throwable::printStackTrace);
     }
 
     public void validate() {
@@ -126,9 +116,13 @@ public class Liv {
         }
     }
 
-    public void onDestroy() {
+    public void dispose() {
+        if (livDisposable != null && !livDisposable.isDisposed()) {
+            livDisposable.dispose();
+        }
+
         for (Validator validator : validators) {
-            validator.onDestroy();
+            validator.dispose();
         }
     }
 

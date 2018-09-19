@@ -3,7 +3,7 @@ package com.benitobertoli.liv.rule;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 public class NotEmptyRule extends BaseRule {
 

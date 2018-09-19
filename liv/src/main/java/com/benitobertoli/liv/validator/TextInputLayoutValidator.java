@@ -6,19 +6,16 @@ import android.text.TextUtils;
 import android.widget.EditText;
 
 import com.benitobertoli.liv.rule.Rule;
-import com.jakewharton.rxbinding.view.RxView;
-import com.jakewharton.rxbinding.widget.RxTextView;
+import com.jakewharton.rxbinding2.view.RxView;
+import com.jakewharton.rxbinding2.widget.RxTextView;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.functions.Func2;
+import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 
 import static com.benitobertoli.liv.validator.MessageType.SINGLE;
 import static com.benitobertoli.liv.validator.ValidationTime.AFTER;
@@ -27,16 +24,14 @@ import static com.benitobertoli.liv.validator.ValidatorState.INVALID;
 import static com.benitobertoli.liv.validator.ValidatorState.NOT_VALIDATED;
 import static com.benitobertoli.liv.validator.ValidatorState.VALID;
 import static com.benitobertoli.liv.validator.ValidatorState.VALIDATING;
-import static rx.android.schedulers.AndroidSchedulers.mainThread;
-import static rx.schedulers.Schedulers.newThread;
+import static io.reactivex.android.schedulers.AndroidSchedulers.mainThread;
+import static io.reactivex.schedulers.Schedulers.newThread;
 
 public class TextInputLayoutValidator extends Validator {
-    public static final int DEBOUNCE_TIMEOUT_MILLIS = 500;
+    private static final int DEBOUNCE_TIMEOUT_MILLIS = 500;
 
     private WeakReference<TextInputLayout> input;
-    private Subscription textChangeSubscription;
-    private Subscription focusChangeSubscription;
-    private Subscription validateSubscription;
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
     private boolean gainedFocus = false;
 
     private ValidationTime time;
@@ -59,11 +54,11 @@ public class TextInputLayoutValidator extends Validator {
     }
 
     public TextInputLayoutValidator(TextInputLayout input, MessageType messageType, List<Rule> rules) {
-        this(input, AFTER, messageType, rules);
+        this(input, LIVE, messageType, rules);
     }
 
     public TextInputLayoutValidator(TextInputLayout input, List<Rule> rules) {
-        this(input, AFTER, SINGLE, rules);
+        this(input, LIVE, SINGLE, rules);
     }
 
     private void init() {
@@ -77,60 +72,40 @@ public class TextInputLayoutValidator extends Validator {
         // while typing
         // All property-based types emit the current value
         // We .skip(1) on these observables because we don't want the initial value
-        textChangeSubscription = RxTextView.textChanges(editText)
+        compositeDisposable.add(RxTextView.textChanges(editText)
                 .skip(1)
                 .debounce(DEBOUNCE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
                 .observeOn(mainThread())
-                .subscribe(new Action1<CharSequence>() {
-                    @Override
-                    public void call(CharSequence text) {
-                        if (time == LIVE) {
-                            validate();
-                        } else {
-                            setState(NOT_VALIDATED);
-                        }
+                .subscribe(text -> {
+                    if (time == LIVE) {
+                        validate();
+                    } else {
+                        setState(NOT_VALIDATED);
                     }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+                }, Throwable::printStackTrace));
 
 
         if (time == AFTER) {
             // on lose focus only
             // views will gain and lose focus as they are being laid out
             // we validate views that had already registered a focus gain after setting up the validator
-            focusChangeSubscription = RxView.focusChanges(editText)
-                    .filter(new Func1<Boolean, Boolean>() {
-                        @Override
-                        public Boolean call(Boolean hasFocus) {
-                            if (hasFocus) {
-                                gainedFocus = true;
-                                return false;
-                            } else {
-                                boolean hadFocus = gainedFocus;
-                                gainedFocus = false;
-                                return hadFocus;
-                            }
+            compositeDisposable.add(RxView.focusChanges(editText)
+                    .filter(hasFocus -> {
+                        if (hasFocus) {
+                            gainedFocus = true;
+                            return false;
+                        } else {
+                            boolean hadFocus = gainedFocus;
+                            gainedFocus = false;
+                            return hadFocus;
                         }
                     })
                     .observeOn(mainThread())
-                    .subscribe(new Action1<Boolean>() {
-                        @Override
-                        public void call(Boolean aBoolean) {
-                            validate();
-                        }
-                    }, new Action1<Throwable>() {
-                        @Override
-                        public void call(Throwable throwable) {
-                            throwable.printStackTrace();
-                        }
-                    });
+                    .subscribe(unused -> validate(), Throwable::printStackTrace));
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void validate() {
         final TextInputLayout textInputLayout = input.get();
@@ -145,65 +120,33 @@ public class TextInputLayoutValidator extends Validator {
 
         final String text = textInputLayout.getEditText().getText().toString();
 
-        validateSubscription = Observable.from(rules)
+        compositeDisposable.add(Observable.fromIterable(rules)
                 .subscribeOn(newThread())
                 // for each Rule, check if text is valid and pass Rule downstream
-                .flatMap(new Func1<Rule, Observable<Pair<Rule, Boolean>>>() {
-                    @Override
-                    public Observable<Pair<Rule, Boolean>> call(final Rule rule) {
-                        return rule.isValid(text).map(new Func1<Boolean, Pair<Rule, Boolean>>() {
-                            @Override
-                            public Pair<Rule, Boolean> call(Boolean valid) {
-                                return new Pair<>(rule, valid);
-                            }
-                        });
-                    }
-                })
+                .flatMap(rule -> rule.isValid(text).map(valid -> new Pair<>(rule, valid)))
                 .observeOn(mainThread())
                 // add error message in case of error
-                .doOnNext(new Action1<Pair<Rule, Boolean>>() {
-                    @Override
-                    public void call(Pair<Rule, Boolean> pair) {
-                        if (!pair.second) {
-                            errorMessages.add(pair.first.getErrorMessage());
-                        }
+                .doOnNext(pair -> {
+                    if (!pair.second) { // if not valid
+                        errorMessages.add(pair.first.getErrorMessage());
                     }
                 })
                 // Rule object is not needed anymore
-                .map(new Func1<Pair<Rule, Boolean>, Boolean>() {
-
-                    @Override
-                    public Boolean call(Pair<Rule, Boolean> pair) {
-                        return pair.second;
-                    }
-                })
+                .map(pair -> pair.second)
                 // accumulate results in one boolean
-                .reduce(new Func2<Boolean, Boolean, Boolean>() {
-                    @Override
-                    public Boolean call(Boolean first, Boolean second) {
-                        return first & second;
-                    }
-                })
-                .subscribe(new Action1<Boolean>() {
-                    @Override
-                    public void call(Boolean valid) {
-                        if (!valid) {
-                            textInputLayout.setError(getErrorMessage());
-                        } else {
-                            if (textInputLayout.isErrorEnabled()) {
-                                // must change error because setError ignores duplicate strings
-                                textInputLayout.setError(null);
-                                textInputLayout.setErrorEnabled(false);
-                            }
+                .reduce((first, second) -> first & second)
+                .subscribe(valid -> {
+                    if (!valid) {
+                        textInputLayout.setError(getErrorMessage());
+                    } else {
+                        if (textInputLayout.isErrorEnabled()) {
+                            // must change error because setError ignores duplicate strings
+                            textInputLayout.setError(null);
+                            textInputLayout.setErrorEnabled(false);
                         }
-                        setState(valid ? VALID : INVALID);
                     }
-                }, new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+                    setState(valid ? VALID : INVALID);
+                }, Throwable::printStackTrace));
     }
 
     private String getErrorMessage() {
@@ -225,17 +168,9 @@ public class TextInputLayoutValidator extends Validator {
     }
 
     @Override
-    public void onDestroy() {
-        if (textChangeSubscription != null && !textChangeSubscription.isUnsubscribed()) {
-            textChangeSubscription.unsubscribe();
-        }
-
-        if (focusChangeSubscription != null && !focusChangeSubscription.isUnsubscribed()) {
-            focusChangeSubscription.unsubscribe();
-        }
-
-        if (validateSubscription != null && !validateSubscription.isUnsubscribed()) {
-            validateSubscription.unsubscribe();
+    public void dispose() {
+        if (!compositeDisposable.isDisposed()) {
+            compositeDisposable.dispose();
         }
     }
 }

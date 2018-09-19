@@ -4,7 +4,7 @@ import android.support.annotation.NonNull;
 
 import java.util.regex.Pattern;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 public class PatternRule extends BaseRule {
 

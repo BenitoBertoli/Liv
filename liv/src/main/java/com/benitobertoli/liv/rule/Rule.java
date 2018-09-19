@@ -2,7 +2,8 @@ package com.benitobertoli.liv.rule;
 
 import android.support.annotation.NonNull;
 
-import rx.Observable;
+import io.reactivex.Observable;
+
 
 public interface Rule {
     Observable<Boolean> isValid(@NonNull CharSequence text);

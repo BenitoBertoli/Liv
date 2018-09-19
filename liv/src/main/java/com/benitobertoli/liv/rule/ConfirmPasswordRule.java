@@ -6,7 +6,8 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 
-import rx.Observable;
+import io.reactivex.Observable;
+
 
 public class ConfirmPasswordRule extends BaseRule {
 

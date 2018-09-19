@@ -7,26 +7,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.benitobertoli.liv.Liv;
-import com.benitobertoli.liv.validator.MessageType;
-import com.benitobertoli.liv.validator.ValidatorState;
 import com.benitobertoli.liv.rule.EmailRule;
 import com.benitobertoli.liv.rule.LengthRule;
 import com.benitobertoli.liv.rule.NotEmptyRule;
+import com.benitobertoli.liv.validator.MessageType;
+import com.benitobertoli.liv.validator.ValidatorState;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
+import static com.benitobertoli.liv.validator.ValidationTime.AFTER;
 import static com.benitobertoli.liv.validator.ValidationTime.LIVE;
 
 public class MainActivity extends AppCompatActivity implements Liv.Callback, Liv.Action {
 
-    @BindView(R.id.required_during_layout) TextInputLayout requiredDuring;
-    @BindView(R.id.required_after_layout) TextInputLayout requiredAfter;
-    @BindView(R.id.email_during_layout) TextInputLayout emailDuring;
-    @BindView(R.id.email_after_layout) TextInputLayout emailAfter;
-    @BindView(R.id.length_during_layout) TextInputLayout lengthDuring;
-    @BindView(R.id.email_required_length_after_layout) TextInputLayout emailRequiredLengthAfter;
+    private TextInputLayout requiredDuring;
 
     private Liv liv;
 
@@ -34,18 +26,25 @@ public class MainActivity extends AppCompatActivity implements Liv.Callback, Liv
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+
+        requiredDuring = findViewById(R.id.required_during_layout);
+        TextInputLayout requiredAfter = findViewById(R.id.required_after_layout);
+        TextInputLayout emailDuring = findViewById(R.id.email_during_layout);
+        TextInputLayout emailAfter = findViewById(R.id.email_after_layout);
+        TextInputLayout lengthDuring = findViewById(R.id.length_during_layout);
+        TextInputLayout emailRequiredLengthAfter = findViewById(R.id.email_required_length_after_layout);
+        findViewById(R.id.submit).setOnClickListener(view -> liv.submitWhenValid());
 
         NotEmptyRule notEmptyRule = new NotEmptyRule();
         EmailRule emailRule = new EmailRule();
         LengthRule lengthRule = new LengthRule(8, 15);
 
-        liv = new Liv.Builder().add(requiredDuring, LIVE, notEmptyRule)
-                .add(requiredAfter, notEmptyRule)
-                .add(emailDuring, LIVE, emailRule)
-                .add(emailAfter, emailRule)
-                .add(lengthDuring, LIVE, lengthRule)
-                .add(emailRequiredLengthAfter, MessageType.MULTIPLE, emailRule, notEmptyRule, lengthRule)
+        liv = new Liv.Builder().add(requiredDuring, notEmptyRule)
+                .add(requiredAfter, AFTER,notEmptyRule)
+                .add(emailDuring, emailRule)
+                .add(emailAfter, AFTER, emailRule)
+                .add(lengthDuring, lengthRule)
+                .add(emailRequiredLengthAfter, AFTER, MessageType.MULTIPLE, emailRule, notEmptyRule, lengthRule)
                 // Note: MessageType.SINGLE can also be used for multiple validators
                 .callback(this) // only needed if you need more control over form validation
                 .submitAction(this)
@@ -53,15 +52,10 @@ public class MainActivity extends AppCompatActivity implements Liv.Callback, Liv
         liv.start();
     }
 
-    @OnClick(R.id.submit)
-    void onSubmitClick() {
-        liv.submitWhenValid();
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        liv.onDestroy();
+        liv.dispose();
     }
 
     @Override
