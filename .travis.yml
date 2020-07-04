@@ -1,0 +1,13 @@
+language: android
+
+android:
+  components:
+    - tools
+    - platform-tools
+
+jdk:
+  - oraclejdk8
+
+sudo: false
+
+script: ./gradlew test
