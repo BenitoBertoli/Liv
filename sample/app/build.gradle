@@ -2,10 +2,6 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
-ext.buildToolsVersion = '28.0.1'
-ext.minimumSdkVersion = 17
-ext.targetSdkVersion = 28
-ext.compileSdkVersion = 28
 ext.versionMajor = 1
 ext.versionMinor = 2
 ext.versionPatch = 0
@@ -13,12 +9,12 @@ ext.versionClassifier = ""
 ext.isSnapshot = false
 
 android {
-    compileSdkVersion project.ext.compileSdkVersion
-    buildToolsVersion project.ext.buildToolsVersion
+    compileSdkVersion versions.compileSdk
+    buildToolsVersion versions.buildToolsVersion
     defaultConfig {
         applicationId "com.example.liv"
-        minSdkVersion project.ext.minimumSdkVersion
-        targetSdkVersion project.ext.targetSdkVersion
+        minSdkVersion versions.minSdk
+        targetSdkVersion versions.targetSdk
         versionCode generateVersionCode()
         versionName generateVersionName()
     }
@@ -35,7 +31,7 @@ android {
 }
 
 private Integer generateVersionCode() {
-    return ext.minimumSdkVersion * 10000000 + ext.versionMajor * 10000 + ext.versionMinor * 100 + ext.versionPatch
+    return versions.minSdk * 10000000 + ext.versionMajor * 10000 + ext.versionMinor * 100 + ext.versionPatch
 }
 
 private String generateVersionName() {
@@ -53,9 +49,9 @@ private String generateVersionName() {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(path: ':liv')
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "androidx.appcompat:appcompat:$versions.appCompat"
+    implementation "com.google.android.material:material:$versions.androidMaterial"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
 }
 repositories {
     mavenCentral()
