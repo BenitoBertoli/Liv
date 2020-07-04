@@ -1,11 +1,7 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
-ext.buildToolsVersion = '28.0.1'
-ext.minimumSdkVersion = 17
-ext.targetSdkVersion = 28
-ext.compileSdkVersion = 28
 ext.versionMajor = 1
 ext.versionMinor = 0
 ext.versionPatch = 0
@@ -37,12 +33,12 @@ ext {
 }
 
 android {
-    compileSdkVersion project.ext.compileSdkVersion
-    buildToolsVersion project.ext.buildToolsVersion
+    compileSdkVersion versions.compileSdk
+    buildToolsVersion versions.buildToolsVersion
 
     defaultConfig {
-        minSdkVersion project.ext.minimumSdkVersion
-        targetSdkVersion project.ext.targetSdkVersion
+        minSdkVersion versions.minSdk
+        targetSdkVersion versions.targetSdk
         versionCode generateVersionCode()
         versionName generateVersionName()
     }
@@ -59,7 +55,7 @@ android {
 }
 
 private Integer generateVersionCode() {
-    return ext.minimumSdkVersion * 10000000 + ext.versionMajor * 10000 + ext.versionMinor * 100 + ext.versionPatch
+    return versions.minSdk * 10000000 + ext.versionMajor * 10000 + ext.versionMinor * 100 + ext.versionPatch
 }
 
 private String generateVersionName() {
@@ -77,15 +73,15 @@ private String generateVersionName() {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.11'
-    implementation 'com.jakewharton.rxbinding3:rxbinding-core:3.1.0'
-    implementation 'com.jakewharton.rxbinding3:rxbinding-material:3.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
-    testImplementation("com.google.truth:truth:1.0") {
+    implementation "com.google.android.material:material:$versions.androidMaterial"
+    implementation "io.reactivex.rxjava2:rxandroid:$versions.rxAndroid"
+    implementation "io.reactivex.rxjava2:rxjava:$versions.rxJava"
+    implementation "com.jakewharton.rxbinding3:rxbinding-core:$versions.rxBindingCore"
+    implementation "com.jakewharton.rxbinding3:rxbinding-material:$versions.rxBindingMaterial"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
+    testImplementation "junit:junit:$versions.jUnit"
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:$versions.mockitoKotlin"
+    testImplementation("com.google.truth:truth:$versions.truth") {
         exclude group: 'com.google.code.findbugs'
     }
 }

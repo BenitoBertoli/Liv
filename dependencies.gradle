@@ -1,0 +1,21 @@
+ext.versions = [
+        minSdk                : 17,
+        compileSdk            : 29,
+        targetSdk             : 29,
+        buildToolsVersion     : '29.0.2',
+
+
+        gradlePlugin          : '4.0.0',
+        bintrayPlugin         : '1.8.4',
+        mavenPlugin           : '2.1',
+        kotlin                : '1.3.72',
+        appCompat             : '1.1.0',
+        androidMaterial       : '1.1.0',
+        rxJava                : '2.2.19',
+        rxAndroid             : '2.1.1',
+        rxBindingCore         : '3.1.0',
+        rxBindingMaterial     : '3.1.0',
+        jUnit                 : '4.13',
+        mockitoKotlin         : '2.1.0',
+        truth                 : '1.0'
+]
